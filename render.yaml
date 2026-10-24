@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: utah-alerts-board
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: python3 utah-alerts-server.py
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"

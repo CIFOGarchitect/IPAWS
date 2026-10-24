@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UTAH // LIVE ALERTS</title>
+<style>
+  :root {
+    --amber: #ffb000; --bg: #0b0b0f; --panel: #16161d; --panel2: #1d1d27;
+    --line: #2a2a35; --text: #f2f2f5; --dim: #9a9aad;
+    --extreme: #ff3b30; --severe: #ff9500; --moderate: #ffd60a; --minor: #64a8ff; --unknown: #8e8e93;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  header { padding: 20px 22px 16px; border-bottom: 3px solid var(--amber); }
+  .topline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 24px; }
+  h1 { margin: 0; font-size: 34px; letter-spacing: 2px; color: var(--amber); }
+  h1 span { color: var(--text); }
+  .clock { margin-left: auto; font-size: 26px; color: var(--amber); }
+  .subline { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 10px;
+    font-size: 13px; letter-spacing: 1px; color: var(--dim); }
+  .dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%;
+    background: #30d158; margin-right: 7px; vertical-align: middle;
+    animation: pulse 1.6s infinite; }
+  .dot.error { background: #ff453a; animation: none; }
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.35; } 100% { opacity: 1; } }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 22px;
+    background: var(--panel); border-bottom: 1px solid var(--line); align-items: center; }
+  .controls label { font-size: 12px; letter-spacing: 1px; color: var(--dim); }
+  .controls select, .controls input[type="search"] { font-size: 14px; padding: 8px 10px;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); }
+  .controls input[type="search"] { min-width: 230px; }
+  .controls button { font-size: 14px; padding: 9px 16px; border: 0; border-radius: 6px;
+    background: var(--amber); color: #111; font-weight: 700; cursor: pointer; }
+  .controls button:hover { filter: brightness(1.1); }
+  .src { font-size: 12px; color: var(--dim); margin-left: auto; }
+  main { padding: 18px 22px 30px; max-width: 1100px; margin: 0 auto; }
+  .featured { border: 2px solid var(--severe); border-radius: 12px; padding: 20px 22px;
+    margin-bottom: 20px; background: linear-gradient(180deg, #241a08, var(--panel)); }
+  .featured.sev-Extreme { border-color: var(--extreme); background: linear-gradient(180deg, #2a0d0d, var(--panel)); }
+  .featured.sev-Moderate { border-color: var(--moderate); }
+  .featured.sev-Minor { border-color: var(--minor); }
+  .featured.sev-Unknown { border-color: var(--unknown); }
+  .featured .tag { font-size: 12px; letter-spacing: 2px; color: var(--amber); font-weight: 700; }
+  .featured h2 { margin: 8px 0 6px; font-size: 34px; line-height: 1.1; }
+  .featured .headline { font-size: 17px; color: #e8e8ee; margin: 8px 0; }
+  .featured .countdown { font-size: 22px; color: var(--amber); margin-top: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .chip { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+    background: #2a2a35; color: var(--text); }
+  .chip.sev-Extreme { background: #3d0f0f; color: #ff9f9a; }
+  .chip.sev-Severe { background: #3d2405; color: #ffb340; }
+  .chip.sev-Moderate { background: #3d3605; color: #ffe45e; }
+  .chip.sev-Minor { background: #12263f; color: #9cc8ff; }
+  .chip.test { background: #2e1a3d; color: #d8b4fe; }
+  .row { border: 1px solid var(--line); border-left: 6px solid var(--unknown); border-radius: 10px;
+    background: var(--panel); margin-bottom: 12px; overflow: hidden; }
+  .row.sev-Extreme { border-left-color: var(--extreme); }
+  .row.sev-Severe { border-left-color: var(--severe); }
+  .row.sev-Moderate { border-left-color: var(--moderate); }
+  .row.sev-Minor { border-left-color: var(--minor); }
+  .row-main { display: grid; grid-template-columns: 110px 1fr auto; gap: 14px;
+    padding: 14px 16px; cursor: pointer; align-items: center; }
+  .row-main:hover { background: var(--panel2); }
+  .sevword { font-weight: 800; letter-spacing: 1px; font-size: 13px; }
+  .sev-Extreme .sevword { color: var(--extreme); }
+  .sev-Severe .sevword { color: var(--severe); }
+  .sev-Moderate .sevword { color: var(--moderate); }
+  .sev-Minor .sevword { color: var(--minor); }
+  .sev-Unknown .sevword { color: var(--unknown); }
+  .row-event { font-size: 18px; font-weight: 700; }
+  .row-event small { font-weight: 600; color: var(--dim); }
+  .row-sub { font-size: 13px; color: var(--dim); margin-top: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-right { text-align: right; font-size: 13px; color: var(--dim); white-space: nowrap; }
+  .row-right .cd { color: var(--amber); font-size: 15px; font-weight: 700; }
+  .row-detail { display: none; border-top: 1px solid var(--line); padding: 16px 18px; }
+  .row.open .row-detail { display: block; }
+  .desc { white-space: pre-line; font-size: 14px; line-height: 1.55; color: #e8e8ee; }
+  .instr { background: #2a2205; border: 1px solid #5c4a08; border-radius: 8px;
+    padding: 12px 14px; margin-top: 12px; font-size: 14px; }
+  .instr b { display: block; margin-bottom: 4px; color: var(--amber); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 20px; margin-top: 14px; font-size: 13px; color: var(--dim); }
+  .grid b { color: var(--text); }
+  .poly { margin-top: 14px; }
+  .poly svg { width: 100%; max-width: 460px; height: 140px; background: #0e0e13;
+    border: 1px solid var(--line); border-radius: 8px; display: block; }
+  .poly .cap { font-size: 12px; color: var(--dim); margin-top: 4px; }
+  .banner { padding: 14px 16px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; }
+  .banner.error { background: #2a0d0d; border: 1px solid #5c1a1a; color: #ffb4ab; }
+  .allclear { border: 2px solid #30d158; border-radius: 12px; padding: 34px 22px;
+    text-align: center; background: linear-gradient(180deg, #0d2415, var(--panel)); }
+  .allclear h2 { margin: 0; font-size: 34px; letter-spacing: 2px; color: #30d158; }
+  .allclear p { color: var(--dim); margin: 10px 0 0; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 0 22px 34px;
+    font-size: 12px; color: var(--dim); line-height: 1.6; }
+  @media (max-width: 640px) {
+    h1 { font-size: 26px; } .clock { font-size: 20px; margin-left: 0; }
+    .row-main { grid-template-columns: 1fr; } .row-right { text-align: left; }
+    .featured h2 { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="topline">
+    <h1>UTAH <span>// LIVE ALERTS</span></h1>
+    <div class="clock mono" id="clock">--:--:--</div>
+  </div>
+  <div class="subline mono">
+    <span><span id="liveDot" class="dot"></span><span id="liveText">CONNECTING…</span></span>
+    <span id="countText"></span>
+    <span id="updatedText"></span>
+    <span>REFRESH 30S · SERVER POLL 60S</span>
+  </div>
+</header>
+
+<div class="controls">
+  <label>COUNTY
+    <select id="countyFilter"><option value="">ALL UTAH</option></select>
+  </label>
+  <label>SEVERITY
+    <select id="severityFilter">
+      <option value="">ALL</option>
+      <option>Extreme</option><option>Severe</option><option>Moderate</option><option>Minor</option><option>Unknown</option>
+    </select>
+  </label>
+  <label>SEARCH
+    <input type="search" id="searchBox" placeholder="Event, headline, or text…">
+  </label>
+  <button id="refreshBtn" type="button">REFRESH NOW</button>
+  <span class="src" id="sourceText"></span>
+</div>
+
+<main>
+  <div id="banner" style="display:none" class="banner error"></div>
+  <div id="featured"></div>
+  <div id="rows"></div>
+  <div id="empty"></div>
+</main>
+
+<footer>
+  <b>Coverage note:</b> This board currently pulls the National Weather Service feed for Utah, which covers
+  weather and water alerts plus NWS-relayed emergencies. It does not yet capture every IPAWS pathway —
+  a county alert sent to WEA or EAS without going through NWS will not appear here. WEA coverage via PBS WARN
+  and the full IPAWS All-Hazards Information Feed are planned additions. For official warnings, always follow
+  Wireless Emergency Alerts, the Emergency Alert System, and NOAA Weather Radio. Alert data is public information
+  served by the National Weather Service; this board only displays it.
+</footer>
+
+<script>
+"use strict";
+var API_URL = "/api/alerts";
+var NWS_URL = "https://api.weather.gov/alerts/active?area=UT";
+var REFRESH_MS = 30000;
+var SEV_ORDER = { "Extreme": 0, "Severe": 1, "Moderate": 2, "Minor": 3, "Unknown": 4 };
+var COUNTY_NAMES = {
+  "001": "Beaver", "003": "Box Elder", "005": "Cache", "007": "Carbon", "009": "Daggett",
+  "011": "Davis", "013": "Duchesne", "015": "Emery", "017": "Garfield", "019": "Grand",
+  "021": "Iron", "023": "Juab", "025": "Kane", "027": "Millard", "029": "Morgan",
+  "031": "Piute", "033": "Rich", "035": "Salt Lake", "037": "San Juan", "039": "Sanpete",
+  "041": "Sevier", "043": "Summit", "045": "Tooele", "047": "Uintah", "049": "Utah",
+  "051": "Wasatch", "053": "Washington", "055": "Wayne", "057": "Weber"
+};
+var allAlerts = [];
+var expanded = {};
+var lastGoodFetch = null;
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function fmtTime(t) {
+  if (!t) return "—";
+  var d = new Date(t);
+  return isNaN(d) ? esc(t) : d.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+function countdownText(expires) {
+  if (!expires) return "—";
+  var diff = new Date(expires) - new Date();
+  if (isNaN(diff)) return "—";
+  if (diff <= 0) return "EXPIRED";
+  var mins = Math.floor(diff / 60000);
+  if (mins < 60) return mins + "M LEFT";
+  var h = Math.floor(mins / 60), m = mins % 60;
+  return h + "H " + m + "M LEFT";
+}
+function utahCounties(props) {
+  var out = [];
+  var same = (props.geocode && props.geocode.SAME) || [];
+  for (var i = 0; i < same.length; i++) {
+    var code = String(same[i]);
+    if (code.length === 6 && code.indexOf("049") === 0) {
+      var cc = code.slice(3);
+      out.push(COUNTY_NAMES[cc] || ("FIPS " + code));
+    }
+  }
+  return out;
+}
+function polygonRing(geometry) {
+  if (!geometry || !geometry.coordinates) return null;
+  if (geometry.type === "Polygon") return geometry.coordinates[0] || null;
+  if (geometry.type === "MultiPolygon" && geometry.coordinates[0]) return geometry.coordinates[0][0] || null;
+  return null;
+}
+function normalizeNWS(feature) {
+  var p = feature.properties || {};
+  var sameCodes = (p.eventCode && p.eventCode.SAME) || [];
+  return {
+    id: p.id || feature.id || "",
+    event: p.event || "Alert",
+    code: sameCodes.length ? sameCodes[0] : "—",
+    category: p.category || "—",
+    severity: p.severity || "Unknown",
+    certainty: p.certainty || "—",
+    urgency: p.urgency || "—",
+    status: p.status || "—",
+    messageType: p.messageType || "—",
+    headline: p.headline || p.event || "Alert",
+    description: p.description || "",
+    instruction: p.instruction || "",
+    areaDesc: p.areaDesc || "—",
+    counties: utahCounties(p),
+    sent: p.sent || "",
+    expires: p.expires || p.ends || "",
+    sender: p.senderName || p.sender || "—",
+    ring: polygonRing(feature.geometry),
+    source: "NWS"
+  };
+}
+function polygonSVG(ring, stroke) {
+  if (!ring || ring.length < 3) return "";
+  var minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  for (var i = 0; i < ring.length; i++) {
+    var lon = ring[i][0], lat = ring[i][1];
+    if (lon < minLon) minLon = lon; if (lon > maxLon) maxLon = lon;
+    if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat;
+  }
+  if (!isFinite(minLon) || maxLon === minLon || maxLat === minLat) return "";
+  var W = 280, H = 140, PAD = 6;
+  var s = Math.min((W - 2 * PAD) / (maxLon - minLon), (H - 2 * PAD) / (maxLat - minLat));
+  var ox = PAD + ((W - 2 * PAD) - s * (maxLon - minLon)) / 2;
+  var oy = PAD + ((H - 2 * PAD) - s * (maxLat - minLat)) / 2;
+  var pts = [];
+  for (var j = 0; j < ring.length; j++) {
+    pts.push((ox + (ring[j][0] - minLon) * s).toFixed(1) + "," + (oy + (maxLat - ring[j][1]) * s).toFixed(1));
+  }
+  var c = stroke || "#ffb000";
+  return '<div class="poly"><svg viewBox="0 0 280 140" preserveAspectRatio="xMidYMid meet">' +
+    '<polygon points="' + pts.join(" ") + '" fill="rgba(255,176,0,0.12)" stroke="' + c + '" stroke-width="1.5"/></svg>' +
+    '<div class="cap">Alert polygon (' + ring.length + ' points) — shape shown, not to scale.</div></div>';
+}
+function countyChips(a) {
+  if (!a.counties.length) return '<span class="chip">COUNTY NOT SPECIFIED</span>';
+  return a.counties.map(function (c) { return '<span class="chip">' + esc(c.toUpperCase()) + '</span>'; }).join("");
+}
+function statusChip(a) {
+  return (a.status === "Test" || a.status === "Exercise")
+    ? '<span class="chip test">' + esc(a.status.toUpperCase()) + '</span>' : "";
+}
+function detailHTML(a) {
+  return (a.description ? '<div class="desc">' + esc(a.description) + '</div>' : "") +
+    (a.instruction ? '<div class="instr"><b>INSTRUCTIONS</b>' + esc(a.instruction) + '</div>' : "") +
+    '<div class="grid">' +
+      '<div><b>LOCATION</b><br>' + esc(a.areaDesc) + '</div>' +
+      '<div><b>COUNTY</b><br>' + countyChips(a) + '</div>' +
+      '<div><b>SENT</b><br>' + esc(fmtTime(a.sent)) + '</div>' +
+      '<div><b>EXPIRES</b><br>' + esc(fmtTime(a.expires)) + '</div>' +
+      '<div><b>SENDER</b><br>' + esc(a.sender) + '</div>' +
+      '<div><b>CERTAINTY / URGENCY</b><br>' + esc(a.certainty) + ' / ' + esc(a.urgency) + '</div>' +
+      '<div><b>SOURCE</b><br>' + esc(a.source || "NWS") + '</div>' +
+    '</div>' +
+    (a.ring ? polygonSVG(a.ring)
+            : '<div class="poly"><div class="cap">No polygon for this alert — area defined by counties/zones above.</div></div>');
+}
+function filtered() {
+  var county = document.getElementById("countyFilter").value;
+  var severity = document.getElementById("severityFilter").value;
+  var q = document.getElementById("searchBox").value.trim().toLowerCase();
+  var list = allAlerts.filter(function (a) {
+    if (county && a.counties.indexOf(county) === -1) return false;
+    if (severity && a.severity !== severity) return false;
+    if (q) {
+      var hay = (a.event + " " + a.headline + " " + a.description + " " + a.areaDesc).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+  list.sort(function (a, b) {
+    var so = (SEV_ORDER[a.severity] == null ? 4 : SEV_ORDER[a.severity]) -
+             (SEV_ORDER[b.severity] == null ? 4 : SEV_ORDER[b.severity]);
+    if (so !== 0) return so;
+    return String(b.sent).localeCompare(String(a.sent));
+  });
+  return list;
+}
+function buildCountyOptions() {
+  var sel = document.getElementById("countyFilter");
+  var seen = {}, names = [];
+  for (var i = 0; i < allAlerts.length; i++) {
+    for (var j = 0; j < allAlerts[i].counties.length; j++) {
+      var c = allAlerts[i].counties[j];
+      if (!seen[c]) { seen[c] = true; names.push(c); }
+    }
+  }
+  names.sort();
+  var current = sel.value;
+  sel.innerHTML = '<option value="">ALL UTAH</option>' +
+    names.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n.toUpperCase()) + '</option>'; }).join("");
+  if (names.indexOf(current) !== -1) sel.value = current;
+}
+function render() {
+  var list = filtered();
+  document.getElementById("countText").textContent =
+    list.length + " SHOWN · " + allAlerts.length + " ACTIVE IN UTAH";
+  var featEl = document.getElementById("featured");
+  var rowsEl = document.getElementById("rows");
+  var emptyEl = document.getElementById("empty");
+  if (!allAlerts.length) {
+    featEl.innerHTML = "";
+    rowsEl.innerHTML = "";
+    emptyEl.innerHTML = '<div class="allclear"><h2>✓ ALL CLEAR</h2><p>NO ACTIVE ALERTS IN UTAH</p></div>';
+    return;
+  }
+  if (!list.length) {
+    featEl.innerHTML = "";
+    rowsEl.innerHTML = "";
+    emptyEl.innerHTML = '<div class="allclear"><h2>NO MATCH</h2><p>NO ALERTS MATCH THE CURRENT FILTERS</p></div>';
+    return;
+  }
+  emptyEl.innerHTML = "";
+  var top = list[0];
+  featEl.innerHTML = '<div class="featured sev-' + top.severity + '">' +
+    '<div class="tag mono">TOP ALERT · ' + esc(top.severity.toUpperCase()) + '</div>' +
+    '<h2>' + esc(top.event) + ' <span style="font-size:18px;color:var(--dim)">· ' + esc(top.code) + '</span></h2>' +
+    '<div class="chips">' + countyChips(top) + statusChip(top) + '</div>' +
+    '<div class="headline">' + esc(top.headline) + '</div>' +
+    '<div class="countdown mono">⏱ EXPIRES <span data-expires="' + esc(top.expires) + '">' + countdownText(top.expires) + '</span></div>' +
+    '<div style="margin-top:12px;font-size:13px;color:var(--dim)">Tap any alert below for full text, instructions, and polygon.</div>' +
+    '</div>';
+  var html = "";
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    var isOpen = !!expanded[a.id];
+    html += '<div class="row sev-' + a.severity + (isOpen ? " open" : "") + '" data-id="' + esc(a.id) + '">' +
+      '<div class="row-main">' +
+        '<div class="sevword mono">' + esc(a.severity.toUpperCase()) + '</div>' +
+        '<div><div class="row-event">' + esc(a.event) + ' <small>· ' + esc(a.code) + '</small></div>' +
+        '<div class="row-sub">' + esc(a.areaDesc) + '</div></div>' +
+        '<div class="row-right mono"><div class="cd"><span data-expires="' + esc(a.expires) + '">' + countdownText(a.expires) + '</span></div>' +
+        '<div>' + esc(fmtTime(a.sent)) + ' · ' + (a.counties.length ? esc(a.counties[0]) + (a.counties.length > 1 ? " +" + (a.counties.length - 1) : "") : "—") + '</div></div>' +
+      '</div>' +
+      '<div class="row-detail">' + detailHTML(a) + '</div>' +
+      '</div>';
+  }
+  rowsEl.innerHTML = html;
+}
+function setStatus(ok, msg) {
+  var dot = document.getElementById("liveDot");
+  dot.className = "dot" + (ok ? "" : " error");
+  document.getElementById("liveText").textContent = msg;
+}
+function loadAlerts() {
+  fetch(API_URL, { headers: { "Accept": "application/json" } })
+    .then(function (resp) {
+      if (!resp.ok) throw new Error("board server HTTP " + resp.status);
+      return resp.json();
+    })
+    .then(function (data) {
+      allAlerts = data.alerts || [];
+      lastGoodFetch = new Date();
+      document.getElementById("sourceText").textContent = "VIA BOARD SERVER · " + (data.sources || ["NWS"]).join(" + ");
+      document.getElementById("updatedText").textContent =
+        "FEED " + (data.updated ? fmtTime(data.updated).toUpperCase() : lastGoodFetch.toLocaleTimeString().toUpperCase());
+      buildCountyOptions();
+      render();
+      setStatus(true, "LIVE");
+      hideBanner();
+    })
+    .catch(function () {
+      fetch(NWS_URL, { headers: { "Accept": "application/geo+json" } })
+        .then(function (resp) {
+          if (!resp.ok) throw new Error("NWS HTTP " + resp.status);
+          return resp.json();
+        })
+        .then(function (data) {
+          allAlerts = ((data && data.features) || []).map(normalizeNWS);
+          lastGoodFetch = new Date();
+          document.getElementById("sourceText").textContent = "DIRECT NWS (BOARD SERVER UNAVAILABLE)";
+          document.getElementById("updatedText").textContent =
+            "FEED " + (data.updated ? fmtTime(data.updated).toUpperCase() : lastGoodFetch.toLocaleTimeString().toUpperCase());
+          buildCountyOptions();
+          render();
+          setStatus(true, "LIVE · DIRECT");
+          hideBanner();
+        })
+        .catch(function (err) {
+          setStatus(false, "FEED OFFLINE");
+          showBanner("Could not reach the alert feed (" + err.message + "). Showing last good data, if any. Retrying automatically.");
+          if (allAlerts.length) render();
+        });
+    });
+}
+function showBanner(msg) {
+  var b = document.getElementById("banner");
+  b.style.display = "block";
+  b.textContent = msg;
+}
+function hideBanner() {
+  document.getElementById("banner").style.display = "none";
+}
+function tick() {
+  document.getElementById("clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  var els = document.querySelectorAll("[data-expires]");
+  for (var i = 0; i < els.length; i++) {
+    els[i].textContent = countdownText(els[i].getAttribute("data-expires"));
+  }
+}
+document.getElementById("refreshBtn").addEventListener("click", loadAlerts);
+document.getElementById("countyFilter").addEventListener("change", render);
+document.getElementById("severityFilter").addEventListener("change", render);
+document.getElementById("searchBox").addEventListener("input", render);
+document.getElementById("rows").addEventListener("click", function (ev) {
+  var main = ev.target.closest(".row-main");
+  if (!main) return;
+  var row = main.parentNode;
+  var id = row.getAttribute("data-id");
+  if (expanded[id]) { delete expanded[id]; row.classList.remove("open"); }
+  else { expanded[id] = true; row.classList.add("open"); }
+});
+loadAlerts();
+setInterval(loadAlerts, REFRESH_MS);
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
