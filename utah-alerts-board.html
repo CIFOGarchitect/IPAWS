@@ -36,6 +36,14 @@
     animation: pulse 1.6s infinite; }
   .dot.error { background: #ff453a; animation: none; }
   @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.35; } 100% { opacity: 1; } }
+  .tabs { display: flex; gap: 0; padding: 0 22px; background: var(--panel);
+    border-bottom: 1px solid var(--line); }
+  .tabbtn { font-size: 15px; font-weight: 800; letter-spacing: 1px; padding: 14px 20px;
+    background: none; border: 0; border-bottom: 3px solid transparent; color: var(--dim);
+    cursor: pointer; }
+  .tabbtn:hover { color: var(--text); }
+  .tabbtn.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tabbtn.demo.active { color: #d8b4fe; border-bottom-color: #a855f7; }
   .controls { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 22px;
     background: var(--panel); border-bottom: 1px solid var(--line); align-items: center; }
   .controls label { font-size: 12px; letter-spacing: 1px; color: var(--dim); }
@@ -107,6 +115,13 @@
     text-align: center; background: linear-gradient(180deg, #0d2415, var(--panel)); }
   .allclear h2 { margin: 0; font-size: 40px; letter-spacing: 2px; color: #30d158; }
   .allclear p { color: var(--dim); margin: 10px 0 0; }
+  .demobadge { border: 2px solid #a855f7; border-radius: 12px; padding: 18px 20px;
+    margin-bottom: 16px; background: linear-gradient(180deg, #241233, var(--panel)); }
+  .demobadge h2 { margin: 0 0 6px; font-size: 24px; letter-spacing: 1px; color: #d8b4fe; }
+  .demobadge p { margin: 6px 0; color: #e8e8ee; font-size: 15px; line-height: 1.5; }
+  .demobadge a { color: var(--gold); }
+  .demoframe { width: 100%; height: 80vh; min-height: 600px; border: 1px solid var(--line);
+    border-radius: 10px; background: #fff; }
   footer { max-width: 1200px; margin: 0 auto; padding: 0 22px 34px;
     font-size: 12px; color: var(--dim); line-height: 1.6; }
   .officialfoot { color: #d7dce8; font-size: 13px; letter-spacing: 1px; margin-bottom: 8px; }
@@ -133,7 +148,12 @@
   </div>
 </header>
 
-<div class="controls">
+<div class="tabs">
+  <button id="tabLive" class="tabbtn active" type="button">LIVE ALERTS</button>
+  <button id="tabDemo" class="tabbtn demo" type="button">DEMO / TRAINING</button>
+</div>
+
+<div class="controls" id="liveControls">
   <label>COUNTY
     <select id="countyFilter"><option value="">ALL UTAH</option></select>
   </label>
@@ -151,10 +171,25 @@
 </div>
 
 <main>
-  <div id="banner" style="display:none" class="banner error"></div>
-  <div id="featured"></div>
-  <div id="rows"></div>
-  <div id="empty"></div>
+  <div id="liveView">
+    <div id="banner" style="display:none" class="banner error"></div>
+    <div id="featured"></div>
+    <div id="rows"></div>
+    <div id="empty"></div>
+  </div>
+  <div id="demoView" style="display:none">
+    <div class="demobadge">
+      <h2>DEMO / TRAINING DATA ONLY</h2>
+      <p>These are test messages from the IPAWS Training and Demonstration environment — monthly
+      proficiency demonstrations, training, and exercises. They are <b>NOT live public alerts</b>
+      and never mix with the live board.</p>
+      <p>Use the viewer&rsquo;s own COG dropdown to pick an authority. If the viewer does not load
+      in the frame below, open it directly:
+      <a href="https://messageviewer.demo.apps.fema.gov/index.html" target="_blank" rel="noopener">Open the IPAWS Demo Message Viewer</a>.</p>
+    </div>
+    <iframe id="demoFrame" class="demoframe" title="IPAWS Demo Message Viewer"
+      data-src="https://messageviewer.demo.apps.fema.gov/index.html"></iframe>
+  </div>
 </main>
 
 <footer>
@@ -380,6 +415,22 @@ function setStatus(ok, msg) {
   dot.className = "dot" + (ok ? "" : " error");
   document.getElementById("liveText").textContent = msg;
 }
+function showTab(which) {
+  var live = which === "live";
+  document.getElementById("tabLive").classList.toggle("active", live);
+  document.getElementById("tabDemo").classList.toggle("active", !live);
+  document.getElementById("liveControls").style.display = live ? "" : "none";
+  document.getElementById("liveView").style.display = live ? "" : "none";
+  document.getElementById("demoView").style.display = live ? "none" : "";
+  if (!live) {
+    var frame = document.getElementById("demoFrame");
+    if (frame && !frame.getAttribute("src")) {
+      frame.setAttribute("src", frame.getAttribute("data-src"));
+    }
+  } else {
+    render();
+  }
+}
 function loadAlerts() {
   fetch(API_URL, { headers: { "Accept": "application/json" } })
     .then(function (resp) {
@@ -440,6 +491,8 @@ document.getElementById("refreshBtn").addEventListener("click", loadAlerts);
 document.getElementById("countyFilter").addEventListener("change", render);
 document.getElementById("severityFilter").addEventListener("change", render);
 document.getElementById("searchBox").addEventListener("input", render);
+document.getElementById("tabLive").addEventListener("click", function () { showTab("live"); });
+document.getElementById("tabDemo").addEventListener("click", function () { showTab("demo"); });
 document.getElementById("rows").addEventListener("click", function (ev) {
   var main = ev.target.closest(".row-main");
   if (!main) return;
