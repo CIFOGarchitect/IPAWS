@@ -5,8 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UTAH // LIVE ALERTS</title>
 <style>
+  /* Brand theme: mirrors dem.utah.gov — dark navy dominant, gold secondary accent,
+     black official banner. Hex values are matched to the site's visual appearance
+     (navy/gold families); swap with official brand-guide values if available. */
   :root {
-    --amber: #ffb000; --bg: #0b0b0f; --panel: #16161d; --panel2: #1d1d27;
+    --gold: #c9a227; --navy: #0a2a5e; --navy-dark: #071d3b;
+    --bg: #0b0b0f; --panel: #16161d; --panel2: #1d1d27;
     --line: #2a2a35; --text: #f2f2f5; --dim: #9a9aad;
     --extreme: #ff3b30; --severe: #ff9500; --moderate: #ffd60a; --minor: #64a8ff; --unknown: #8e8e93;
   }
@@ -14,13 +18,19 @@
   body { margin: 0; background: var(--bg); color: var(--text);
     font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
   .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-  header { padding: 20px 22px 16px; border-bottom: 3px solid var(--amber); }
+  .officialbar { background: #000; color: #fff; font-size: 13px; letter-spacing: 1px;
+    padding: 8px 22px; }
+  header { padding: 20px 22px 16px; background: linear-gradient(180deg, var(--navy), var(--navy-dark));
+    border-bottom: 4px solid var(--gold); }
   .topline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 24px; }
-  h1 { margin: 0; font-size: 34px; letter-spacing: 2px; color: var(--amber); }
-  h1 span { color: var(--text); }
-  .clock { margin-left: auto; font-size: 26px; color: var(--amber); }
-  .subline { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 10px;
-    font-size: 13px; letter-spacing: 1px; color: var(--dim); }
+  h1 { margin: 0; font-size: 42px; letter-spacing: 2px; color: #fff; }
+  h1 span { color: var(--gold); }
+  .clock { margin-left: auto; font-size: 32px; color: var(--gold); }
+  .wordmark { font-family: Georgia, "Times New Roman", serif; color: #d7dce8;
+    font-size: 17px; line-height: 1.35; margin-top: 6px; }
+  .wordmark b { color: #fff; }
+  .subline { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 12px;
+    font-size: 14px; letter-spacing: 1px; color: #c3c9d8; }
   .dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%;
     background: #30d158; margin-right: 7px; vertical-align: middle;
     animation: pulse 1.6s infinite; }
@@ -33,22 +43,25 @@
     border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); }
   .controls input[type="search"] { min-width: 230px; }
   .controls button { font-size: 14px; padding: 9px 16px; border: 0; border-radius: 6px;
-    background: var(--amber); color: #111; font-weight: 700; cursor: pointer; }
+    background: var(--gold); color: #111; font-weight: 700; cursor: pointer; }
   .controls button:hover { filter: brightness(1.1); }
   .src { font-size: 12px; color: var(--dim); margin-left: auto; }
-  main { padding: 18px 22px 30px; max-width: 1100px; margin: 0 auto; }
-  .featured { border: 2px solid var(--severe); border-radius: 12px; padding: 20px 22px;
+  main { padding: 18px 22px 30px; max-width: 1200px; margin: 0 auto; }
+  .featured { border: 2px solid var(--severe); border-radius: 12px; padding: 22px 24px;
     margin-bottom: 20px; background: linear-gradient(180deg, #241a08, var(--panel)); }
   .featured.sev-Extreme { border-color: var(--extreme); background: linear-gradient(180deg, #2a0d0d, var(--panel)); }
   .featured.sev-Moderate { border-color: var(--moderate); }
   .featured.sev-Minor { border-color: var(--minor); }
   .featured.sev-Unknown { border-color: var(--unknown); }
-  .featured .tag { font-size: 12px; letter-spacing: 2px; color: var(--amber); font-weight: 700; }
-  .featured h2 { margin: 8px 0 6px; font-size: 34px; line-height: 1.1; }
-  .featured .headline { font-size: 17px; color: #e8e8ee; margin: 8px 0; }
-  .featured .countdown { font-size: 22px; color: var(--amber); margin-top: 10px; }
+  .featured .tag { font-size: 13px; letter-spacing: 2px; color: var(--gold); font-weight: 700; }
+  .featured h2 { margin: 8px 0 6px; font-size: 40px; line-height: 1.1; }
+  .featured .headline { font-size: 20px; color: #e8e8ee; margin: 8px 0; }
+  .featured .countdown { font-size: 26px; color: var(--gold); margin-top: 12px; }
+  .featured .instr { background: #2a2205; border: 1px solid #5c4a08; border-radius: 8px;
+    padding: 12px 14px; margin-top: 12px; font-size: 16px; }
+  .featured .instr b { display: block; margin-bottom: 4px; color: var(--gold); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-  .chip { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  .chip { font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
     background: #2a2a35; color: var(--text); }
   .chip.sev-Extreme { background: #3d0f0f; color: #ff9f9a; }
   .chip.sev-Severe { background: #3d2405; color: #ffb340; }
@@ -61,27 +74,26 @@
   .row.sev-Severe { border-left-color: var(--severe); }
   .row.sev-Moderate { border-left-color: var(--moderate); }
   .row.sev-Minor { border-left-color: var(--minor); }
-  .row-main { display: grid; grid-template-columns: 110px 1fr auto; gap: 14px;
-    padding: 14px 16px; cursor: pointer; align-items: center; }
+  .row-main { display: grid; grid-template-columns: 120px 1fr auto; gap: 14px;
+    padding: 18px 16px; cursor: pointer; align-items: center; }
   .row-main:hover { background: var(--panel2); }
-  .sevword { font-weight: 800; letter-spacing: 1px; font-size: 13px; }
+  .sevword { font-weight: 800; letter-spacing: 1px; font-size: 14px; }
   .sev-Extreme .sevword { color: var(--extreme); }
   .sev-Severe .sevword { color: var(--severe); }
   .sev-Moderate .sevword { color: var(--moderate); }
   .sev-Minor .sevword { color: var(--minor); }
   .sev-Unknown .sevword { color: var(--unknown); }
-  .row-event { font-size: 18px; font-weight: 700; }
+  .row-event { font-size: 21px; font-weight: 700; }
   .row-event small { font-weight: 600; color: var(--dim); }
-  .row-sub { font-size: 13px; color: var(--dim); margin-top: 3px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .row-right { text-align: right; font-size: 13px; color: var(--dim); white-space: nowrap; }
-  .row-right .cd { color: var(--amber); font-size: 15px; font-weight: 700; }
+  .row-sub { font-size: 14px; color: var(--dim); margin-top: 3px; line-height: 1.4; }
+  .row-right { text-align: right; font-size: 14px; color: var(--dim); white-space: nowrap; }
+  .row-right .cd { color: var(--gold); font-size: 17px; font-weight: 700; }
   .row-detail { display: none; border-top: 1px solid var(--line); padding: 16px 18px; }
   .row.open .row-detail { display: block; }
   .desc { white-space: pre-line; font-size: 14px; line-height: 1.55; color: #e8e8ee; }
   .instr { background: #2a2205; border: 1px solid #5c4a08; border-radius: 8px;
     padding: 12px 14px; margin-top: 12px; font-size: 14px; }
-  .instr b { display: block; margin-bottom: 4px; color: var(--amber); }
+  .instr b { display: block; margin-bottom: 4px; color: var(--gold); }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 8px 20px; margin-top: 14px; font-size: 13px; color: var(--dim); }
   .grid b { color: var(--text); }
@@ -93,23 +105,26 @@
   .banner.error { background: #2a0d0d; border: 1px solid #5c1a1a; color: #ffb4ab; }
   .allclear { border: 2px solid #30d158; border-radius: 12px; padding: 34px 22px;
     text-align: center; background: linear-gradient(180deg, #0d2415, var(--panel)); }
-  .allclear h2 { margin: 0; font-size: 34px; letter-spacing: 2px; color: #30d158; }
+  .allclear h2 { margin: 0; font-size: 40px; letter-spacing: 2px; color: #30d158; }
   .allclear p { color: var(--dim); margin: 10px 0 0; }
-  footer { max-width: 1100px; margin: 0 auto; padding: 0 22px 34px;
+  footer { max-width: 1200px; margin: 0 auto; padding: 0 22px 34px;
     font-size: 12px; color: var(--dim); line-height: 1.6; }
+  .officialfoot { color: #d7dce8; font-size: 13px; letter-spacing: 1px; margin-bottom: 8px; }
   @media (max-width: 640px) {
-    h1 { font-size: 26px; } .clock { font-size: 20px; margin-left: 0; }
+    h1 { font-size: 28px; } .clock { font-size: 22px; margin-left: 0; }
     .row-main { grid-template-columns: 1fr; } .row-right { text-align: left; }
-    .featured h2 { font-size: 26px; }
+    .featured h2 { font-size: 28px; }
   }
 </style>
 </head>
 <body>
+<div class="officialbar">An official website of the state of Utah</div>
 <header>
   <div class="topline">
-    <h1>UTAH <span>// LIVE ALERTS</span></h1>
+    <h1><span>UTAH</span> // LIVE ALERTS</h1>
     <div class="clock mono" id="clock">--:--:--</div>
   </div>
+  <div class="wordmark"><b>Department of Public Safety</b><br>Division of Emergency Management</div>
   <div class="subline mono">
     <span><span id="liveDot" class="dot"></span><span id="liveText">CONNECTING…</span></span>
     <span id="countText"></span>
@@ -143,6 +158,7 @@
 </main>
 
 <footer>
+  <div class="officialfoot">UTAH DIVISION OF EMERGENCY MANAGEMENT · DEPARTMENT OF PUBLIC SAFETY</div>
   <b>Coverage note:</b> This board currently pulls the National Weather Service feed for Utah, which covers
   weather and water alerts plus NWS-relayed emergencies. It does not yet capture every IPAWS pathway —
   a county alert sent to WEA or EAS without going through NWS will not appear here. WEA coverage via PBS WARN
@@ -248,9 +264,9 @@ function polygonSVG(ring, stroke) {
   for (var j = 0; j < ring.length; j++) {
     pts.push((ox + (ring[j][0] - minLon) * s).toFixed(1) + "," + (oy + (maxLat - ring[j][1]) * s).toFixed(1));
   }
-  var c = stroke || "#ffb000";
+  var c = stroke || "#c9a227";
   return '<div class="poly"><svg viewBox="0 0 280 140" preserveAspectRatio="xMidYMid meet">' +
-    '<polygon points="' + pts.join(" ") + '" fill="rgba(255,176,0,0.12)" stroke="' + c + '" stroke-width="1.5"/></svg>' +
+    '<polygon points="' + pts.join(" ") + '" fill="rgba(201,162,39,0.12)" stroke="' + c + '" stroke-width="1.5"/></svg>' +
     '<div class="cap">Alert polygon (' + ring.length + ' points) — shape shown, not to scale.</div></div>';
 }
 function countyChips(a) {
@@ -338,6 +354,7 @@ function render() {
     '<h2>' + esc(top.event) + ' <span style="font-size:18px;color:var(--dim)">· ' + esc(top.code) + '</span></h2>' +
     '<div class="chips">' + countyChips(top) + statusChip(top) + '</div>' +
     '<div class="headline">' + esc(top.headline) + '</div>' +
+    (top.instruction ? '<div class="instr"><b>INSTRUCTIONS</b>' + esc(top.instruction) + '</div>' : "") +
     '<div class="countdown mono">⏱ EXPIRES <span data-expires="' + esc(top.expires) + '">' + countdownText(top.expires) + '</span></div>' +
     '<div style="margin-top:12px;font-size:13px;color:var(--dim)">Tap any alert below for full text, instructions, and polygon.</div>' +
     '</div>';
