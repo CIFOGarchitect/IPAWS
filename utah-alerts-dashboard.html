@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Utah Live Alerts — State Alerting Group Dashboard</title>
+<style>
+  :root { --extreme:#b91c1c; --severe:#ea580c; --moderate:#ca8a04; --minor:#2563eb; --unknown:#6b7280; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background:#f3f4f6; color:#111827; }
+  header { background:#111827; color:#fff; padding:18px 20px 14px; }
+  header h1 { margin:0; font-size:22px; }
+  header p { margin:6px 0 0; color:#d1d5db; font-size:14px; }
+  .statusbar { display:flex; flex-wrap:wrap; gap:10px 22px; align-items:center; margin-top:12px; font-size:13px; color:#e5e7eb; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:#22c55e; margin-right:6px; vertical-align:middle; }
+  .dot.stale { background:#f59e0b; }
+  .dot.error { background:#ef4444; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; padding:14px 20px; background:#fff; border-bottom:1px solid #e5e7eb; align-items:center; }
+  .controls label { font-size:13px; color:#374151; }
+  .controls select, .controls input[type="search"] { font-size:14px; padding:7px 9px; border:1px solid #d1d5db; border-radius:6px; background:#fff; }
+  .controls input[type="search"] { min-width:220px; }
+  .controls button { font-size:14px; padding:8px 14px; border:0; border-radius:6px; background:#1d4ed8; color:#fff; cursor:pointer; }
+  .controls button:hover { background:#1e40af; }
+  .meta { font-size:12px; color:#6b7280; margin-left:auto; }
+  main { padding:16px 20px 30px; max-width:1100px; margin:0 auto; }
+  .banner { padding:12px 14px; border-radius:8px; font-size:14px; margin-bottom:14px; }
+  .banner.info { background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; }
+  .banner.error { background:#fef2f2; border:1px solid #fecaca; color:#991b1b; }
+  .banner.empty { background:#fff; border:1px solid #e5e7eb; color:#374151; }
+  .card { background:#fff; border:1px solid #e5e7eb; border-left:6px solid var(--unknown); border-radius:8px; padding:16px 18px; margin-bottom:14px; }
+  .card.sev-Extreme { border-left-color:var(--extreme); }
+  .card.sev-Severe { border-left-color:var(--severe); }
+  .card.sev-Moderate { border-left-color:var(--moderate); }
+  .card.sev-Minor { border-left-color:var(--minor); }
+  .card.sev-Unknown { border-left-color:var(--unknown); }
+  .card h2 { margin:0 0 4px; font-size:18px; }
+  .badges { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+  .badge { display:inline-block; font-size:12px; font-weight:600; padding:3px 8px; border-radius:999px; background:#e5e7eb; color:#111827; }
+  .badge.sev-Extreme { background:#fee2e2; color:#991b1b; }
+  .badge.sev-Severe { background:#ffedd5; color:#9a3412; }
+  .badge.sev-Moderate { background:#fef9c3; color:#854d0e; }
+  .badge.sev-Minor { background:#dbeafe; color:#1e40af; }
+  .badge.test { background:#f3e8ff; color:#6b21a8; }
+  .headline { font-weight:600; margin:8px 0; }
+  .desc { white-space:pre-line; font-size:14px; line-height:1.5; color:#1f2937; }
+  .instr { background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:10px 12px; margin-top:10px; font-size:14px; }
+  .instr b { display:block; margin-bottom:4px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:8px 20px; margin-top:12px; font-size:13px; color:#374151; }
+  .grid b { color:#111827; }
+  .poly { margin-top:12px; }
+  .poly svg { width:100%; max-width:420px; height:130px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px; display:block; }
+  .poly .cap { font-size:12px; color:#6b7280; margin-top:4px; }
+  footer { max-width:1100px; margin:0 auto; padding:0 20px 30px; font-size:12px; color:#6b7280; line-height:1.6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Utah Live Alerts</h1>
+  <p>State alerting group dashboard &mdash; active alerts in Utah, all hazards, all pathways currently available.</p>
+  <div class="statusbar">
+    <span><span id="liveDot" class="dot"></span><span id="liveText">Loading&hellip;</span></span>
+    <span id="countText"></span>
+    <span id="updatedText"></span>
+    <span>Auto-refresh: every 60 seconds</span>
+  </div>
+</header>
+
+<div class="controls">
+  <label>County
+    <select id="countyFilter"><option value="">All Utah</option></select>
+  </label>
+  <label>Severity
+    <select id="severityFilter">
+      <option value="">All severities</option>
+      <option>Extreme</option><option>Severe</option><option>Moderate</option><option>Minor</option><option>Unknown</option>
+    </select>
+  </label>
+  <label>Search
+    <input type="search" id="searchBox" placeholder="Event, headline, or text&hellip;">
+  </label>
+  <button id="refreshBtn" type="button">Refresh now</button>
+  <span class="meta">Source: National Weather Service API (api.weather.gov)</span>
+</div>
+
+<main>
+  <div id="banner" class="banner info">Loading active Utah alerts&hellip;</div>
+  <div id="cards"></div>
+</main>
+
+<footer>
+  <b>Coverage note:</b> This board currently pulls the National Weather Service feed for Utah, which covers
+  weather and water alerts plus NWS-relayed emergencies. It does not yet capture every IPAWS pathway &mdash;
+  a county alert sent to WEA or EAS without going through NWS will not appear here. WEA coverage via PBS WARN
+  and the full IPAWS All-Hazards Information Feed are planned additions. For official warnings, always follow
+  Wireless Emergency Alerts, the Emergency Alert System, and NOAA Weather Radio. Alert data is public information
+  served by the National Weather Service; this board only displays it.
+</footer>
+
+<script>
+"use strict";
+var API_URL = "https://api.weather.gov/alerts/active?area=UT";
+var REFRESH_MS = 60000;
+var SEV_ORDER = { "Extreme": 0, "Severe": 1, "Moderate": 2, "Minor": 3, "Unknown": 4 };
+var COUNTY_NAMES = {
+  "001": "Beaver", "003": "Box Elder", "005": "Cache", "007": "Carbon", "009": "Daggett",
+  "011": "Davis", "013": "Duchesne", "015": "Emery", "017": "Garfield", "019": "Grand",
+  "021": "Iron", "023": "Juab", "025": "Kane", "027": "Millard", "029": "Morgan",
+  "031": "Piute", "033": "Rich", "035": "Salt Lake", "037": "San Juan", "039": "Sanpete",
+  "041": "Sevier", "043": "Summit", "045": "Tooele", "047": "Uintah", "049": "Utah",
+  "051": "Wasatch", "053": "Washington", "055": "Wayne", "057": "Weber"
+};
+var allAlerts = [];
+var lastGoodFetch = null;
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function fmtTime(t) {
+  if (!t) return "—";
+  var d = new Date(t);
+  return isNaN(d) ? esc(t) : d.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+function utahCounties(props) {
+  var out = [];
+  var same = (props.geocode && props.geocode.SAME) || [];
+  for (var i = 0; i < same.length; i++) {
+    var code = String(same[i]);
+    if (code.length === 6 && code.indexOf("049") === 0) {
+      var countyCode = code.slice(3);
+      out.push(COUNTY_NAMES[countyCode] || ("FIPS " + code));
+    }
+  }
+  return out;
+}
+function polygonRing(geometry) {
+  if (!geometry || !geometry.coordinates) return null;
+  if (geometry.type === "Polygon") return geometry.coordinates[0] || null;
+  if (geometry.type === "MultiPolygon" && geometry.coordinates[0]) return geometry.coordinates[0][0] || null;
+  return null;
+}
+function polygonSVG(ring) {
+  if (!ring || ring.length < 3) return "";
+  var minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  for (var i = 0; i < ring.length; i++) {
+    var lon = ring[i][0], lat = ring[i][1];
+    if (lon < minLon) minLon = lon; if (lon > maxLon) maxLon = lon;
+    if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat;
+  }
+  if (!isFinite(minLon) || maxLon === minLon || maxLat === minLat) return "";
+  var W = 280, H = 130, PAD = 6;
+  var sx = (W - 2 * PAD) / (maxLon - minLon);
+  var sy = (H - 2 * PAD) / (maxLat - minLat);
+  var s = Math.min(sx, sy);
+  var ox = PAD + ((W - 2 * PAD) - s * (maxLon - minLon)) / 2;
+  var oy = PAD + ((H - 2 * PAD) - s * (maxLat - minLat)) / 2;
+  var pts = [];
+  for (var j = 0; j < ring.length; j++) {
+    var x = ox + (ring[j][0] - minLon) * s;
+    var y = oy + (maxLat - ring[j][1]) * s;
+    pts.push(x.toFixed(1) + "," + y.toFixed(1));
+  }
+  return '<div class="poly"><svg viewBox="0 0 280 130" preserveAspectRatio="xMidYMid meet">' +
+    '<polygon points="' + pts.join(" ") + '" fill="rgba(220,38,38,0.15)" stroke="#dc2626" stroke-width="1.5"/></svg>' +
+    '<div class="cap">Alert polygon (' + ring.length + ' points) &mdash; shape shown, not to scale.</div></div>';
+}
+function normalize(feature) {
+  var p = feature.properties || {};
+  var sameCodes = (p.eventCode && p.eventCode.SAME) || [];
+  return {
+    id: p.id || feature.id || "",
+    event: p.event || "Alert",
+    code: sameCodes.length ? sameCodes[0] : "—",
+    category: p.category || "—",
+    severity: p.severity || "Unknown",
+    certainty: p.certainty || "—",
+    urgency: p.urgency || "—",
+    status: p.status || "—",
+    messageType: p.messageType || "—",
+    headline: p.headline || p.event || "Alert",
+    description: p.description || "",
+    instruction: p.instruction || "",
+    areaDesc: p.areaDesc || "—",
+    counties: utahCounties(p),
+    sent: p.sent || "",
+    expires: p.expires || p.ends || "",
+    sender: p.senderName || p.sender || "—",
+    ring: polygonRing(feature.geometry)
+  };
+}
+function buildCountyOptions() {
+  var sel = document.getElementById("countyFilter");
+  var seen = {};
+  var names = [];
+  for (var i = 0; i < allAlerts.length; i++) {
+    var cs = allAlerts[i].counties;
+    for (var j = 0; j < cs.length; j++) {
+      if (!seen[cs[j]]) { seen[cs[j]] = true; names.push(cs[j]); }
+    }
+  }
+  names.sort();
+  var current = sel.value;
+  sel.innerHTML = '<option value="">All Utah</option>' +
+    names.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join("");
+  if (names.indexOf(current) !== -1) sel.value = current;
+}
+function render() {
+  var county = document.getElementById("countyFilter").value;
+  var severity = document.getElementById("severityFilter").value;
+  var q = document.getElementById("searchBox").value.trim().toLowerCase();
+  var list = allAlerts.filter(function (a) {
+    if (county && a.counties.indexOf(county) === -1) return false;
+    if (severity && a.severity !== severity) return false;
+    if (q) {
+      var hay = (a.event + " " + a.headline + " " + a.description + " " + a.areaDesc).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+  list.sort(function (a, b) {
+    var so = (SEV_ORDER[a.severity] == null ? 4 : SEV_ORDER[a.severity]) -
+             (SEV_ORDER[b.severity] == null ? 4 : SEV_ORDER[b.severity]);
+    if (so !== 0) return so;
+    return String(b.sent).localeCompare(String(a.sent));
+  });
+  var cardsEl = document.getElementById("cards");
+  var banner = document.getElementById("banner");
+  document.getElementById("countText").textContent =
+    list.length + " shown · " + allAlerts.length + " active in Utah";
+  if (!allAlerts.length) {
+    banner.className = "banner empty";
+    banner.textContent = "No active alerts in Utah at this time.";
+    cardsEl.innerHTML = "";
+    return;
+  }
+  if (!list.length) {
+    banner.className = "banner empty";
+    banner.textContent = "No alerts match the current filters.";
+    cardsEl.innerHTML = "";
+    return;
+  }
+  banner.className = "banner info";
+  banner.textContent = "Showing " + list.length + " of " + allAlerts.length + " active Utah alerts, most severe first.";
+  var html = "";
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    var sevClass = "sev-" + a.severity;
+    var countyBadges = a.counties.length
+      ? a.counties.map(function (c) { return '<span class="badge">' + esc(c) + ' County</span>'; }).join("")
+      : '<span class="badge">County not specified</span>';
+    var statusBadge = (a.status === "Test" || a.status === "Exercise")
+      ? '<span class="badge test">' + esc(a.status.toUpperCase()) + '</span>' : "";
+    html += '<article class="card ' + sevClass + '">' +
+      '<h2>' + esc(a.event) + '</h2>' +
+      '<div class="badges">' +
+        '<span class="badge ' + sevClass + '">' + esc(a.severity) + '</span>' +
+        '<span class="badge">Code: ' + esc(a.code) + '</span>' +
+        '<span class="badge">' + esc(a.category) + '</span>' +
+        '<span class="badge">' + esc(a.messageType) + '</span>' +
+        statusBadge +
+      '</div>' +
+      '<div class="headline">' + esc(a.headline) + '</div>' +
+      (a.description ? '<div class="desc">' + esc(a.description) + '</div>' : "") +
+      (a.instruction ? '<div class="instr"><b>Instructions</b>' + esc(a.instruction) + '</div>' : "") +
+      '<div class="grid">' +
+        '<div><b>Location</b><br>' + esc(a.areaDesc) + '</div>' +
+        '<div><b>County</b><br>' + countyBadges + '</div>' +
+        '<div><b>Sent</b><br>' + esc(fmtTime(a.sent)) + '</div>' +
+        '<div><b>Expires</b><br>' + esc(fmtTime(a.expires)) + '</div>' +
+        '<div><b>Sender</b><br>' + esc(a.sender) + '</div>' +
+        '<div><b>Certainty / Urgency</b><br>' + esc(a.certainty) + ' / ' + esc(a.urgency) + '</div>' +
+      '</div>' +
+      (a.ring ? polygonSVG(a.ring)
+              : '<div class="poly"><div class="cap">No polygon for this alert &mdash; area defined by counties/zones above.</div></div>') +
+      '</article>';
+  }
+  cardsEl.innerHTML = html;
+}
+function setStatus(ok, msg) {
+  var dot = document.getElementById("liveDot");
+  var txt = document.getElementById("liveText");
+  dot.className = "dot" + (ok ? "" : " error");
+  txt.textContent = msg;
+}
+function loadAlerts() {
+  fetch(API_URL, { headers: { "Accept": "application/geo+json" } })
+    .then(function (resp) {
+      if (!resp.ok) throw new Error("Feed returned HTTP " + resp.status);
+      return resp.json();
+    })
+    .then(function (data) {
+      var feats = (data && data.features) || [];
+      allAlerts = feats.map(normalize);
+      lastGoodFetch = new Date();
+      buildCountyOptions();
+      render();
+      setStatus(true, "Live · feed updated " + lastGoodFetch.toLocaleTimeString());
+      document.getElementById("updatedText").textContent =
+        "Feed data as of " + (data.updated ? fmtTime(data.updated) : lastGoodFetch.toLocaleTimeString());
+    })
+    .catch(function (err) {
+      setStatus(false, "Feed error — showing last good data, if any");
+      var banner = document.getElementById("banner");
+      banner.className = "banner error";
+      banner.textContent = "Could not reach the National Weather Service feed (" + err.message + "). " +
+        "Check your connection and press Refresh now to retry.";
+      if (allAlerts.length) render();
+    });
+}
+document.getElementById("refreshBtn").addEventListener("click", loadAlerts);
+document.getElementById("countyFilter").addEventListener("change", render);
+document.getElementById("severityFilter").addEventListener("change", render);
+document.getElementById("searchBox").addEventListener("input", render);
+loadAlerts();
+setInterval(loadAlerts, REFRESH_MS);
+</script>
+</body>
+</html>
