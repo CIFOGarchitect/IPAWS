@@ -194,12 +194,13 @@
 
 <footer>
   <div class="officialfoot">UTAH DIVISION OF EMERGENCY MANAGEMENT · DEPARTMENT OF PUBLIC SAFETY</div>
-  <b>Coverage note:</b> This board currently pulls the National Weather Service feed for Utah, which covers
-  weather and water alerts plus NWS-relayed emergencies. It does not yet capture every IPAWS pathway —
-  a county alert sent to WEA or EAS without going through NWS will not appear here. WEA coverage via PBS WARN
-  and the full IPAWS All-Hazards Information Feed are planned additions. For official warnings, always follow
-  Wireless Emergency Alerts, the Emergency Alert System, and NOAA Weather Radio. Alert data is public information
-  served by the National Weather Service; this board only displays it.
+  <b>Coverage note:</b> This board pulls two production feeds for Utah, merged and deduplicated:
+  the National Weather Service feed and the FEMA IPAWS All-Hazards PUBLIC feed, filtered to Utah
+  geocodes. Each alert carries its source label (NWS, IPAWS, or NWS + IPAWS where both feeds carry
+  the same alert). A county alert sent to WEA or EAS without going through NWS now appears here via
+  IPAWS. For official warnings, always follow Wireless Emergency Alerts, the Emergency Alert System,
+  and NOAA Weather Radio. Alert data is public information served by the National Weather Service
+  and FEMA IPAWS; this board only displays it.
 </footer>
 
 <script>
@@ -387,7 +388,7 @@ function render() {
   featEl.innerHTML = '<div class="featured sev-' + top.severity + '">' +
     '<div class="tag mono">TOP ALERT · ' + esc(top.severity.toUpperCase()) + '</div>' +
     '<h2>' + esc(top.event) + ' <span style="font-size:18px;color:var(--dim)">· ' + esc(top.code) + '</span></h2>' +
-    '<div class="chips">' + countyChips(top) + statusChip(top) + '</div>' +
+    '<div class="chips">' + countyChips(top) + statusChip(top) + '<span class="chip">' + esc(top.source || "NWS") + '</span></div>' +
     '<div class="headline">' + esc(top.headline) + '</div>' +
     (top.instruction ? '<div class="instr"><b>INSTRUCTIONS</b>' + esc(top.instruction) + '</div>' : "") +
     '<div class="countdown mono">⏱ EXPIRES <span data-expires="' + esc(top.expires) + '">' + countdownText(top.expires) + '</span></div>' +
@@ -401,7 +402,7 @@ function render() {
       '<div class="row-main">' +
         '<div class="sevword mono">' + esc(a.severity.toUpperCase()) + '</div>' +
         '<div><div class="row-event">' + esc(a.event) + ' <small>· ' + esc(a.code) + '</small></div>' +
-        '<div class="row-sub">' + esc(a.areaDesc) + '</div></div>' +
+        '<div class="row-sub">' + esc(a.areaDesc) + ' · ' + esc(a.source || "NWS") + '</div></div>' +
         '<div class="row-right mono"><div class="cd"><span data-expires="' + esc(a.expires) + '">' + countdownText(a.expires) + '</span></div>' +
         '<div>' + esc(fmtTime(a.sent)) + ' · ' + (a.counties.length ? esc(a.counties[0]) + (a.counties.length > 1 ? " +" + (a.counties.length - 1) : "") : "—") + '</div></div>' +
       '</div>' +
